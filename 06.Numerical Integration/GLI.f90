@@ -1,7 +1,7 @@
 
 !!!    This program integrates function f(x) with respect to x from a to b
 !!!    by using Gauss-Legendre numerical integration method(n=20)
-!!!    This work is licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License. 
+!!!    This work is licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License.
 !!!    Ao Xu, Profiles: <http://www.linkedin.com/pub/ao-xu/30/a72/a29>
 
        program main
@@ -31,7 +31,7 @@
        data t/0.9931285991850949,0.9639719272779138,0.9122344282513259,0.8391169718222188,0.7463319064601508, &
               0.6360536807265150,0.5108670019508271,0.3737060887154196,0.2277858511416451,0.07652652113349734/  !!! x_k
        data w/0.01761400713915212,0.04060142980038694,0.06267204833410906,0.08327674157670475,0.1019301198172404, &
-              0.1181945319615184,0.1316886384491766,0.1420961093183821,0.1491729864726037,0.1527533871307259/  !!! weight coefficient a_k
+              0.1181945319615184,0.1316886384491766,0.1420961093183821,0.1491729864726037,0.1527533871307259/  !!! weight coefficient A_k
 
        c1=(b-a)/2.0
        c2=c1+a
