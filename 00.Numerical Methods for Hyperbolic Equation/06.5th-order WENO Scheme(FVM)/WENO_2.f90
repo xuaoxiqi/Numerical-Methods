@@ -1,6 +1,6 @@
 
 
-!!!    This program solves Burgers Equation using WENO Scheme.
+!!!    This program solves Burgers Equation using WENO Scheme with Lax-Friedrichs numerical flux.
 !!!    This work is licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License.
 !!!    Ao Xu, Profiles: <http://www.linkedin.com/pub/ao-xu/30/a72/a29>
 
@@ -23,9 +23,9 @@
               X(i) = DBLE(i)*dx
        enddo
 
-       print*, ''
-       print*,'WENO SCHEME:'
-       print*,'****************************************'
+       write(*,*)
+       write(*,*) 'WENO SCHEME(FINITE VOLUME METHOD):'
+       write(*,*) '****************************************'
 
        call exact(N,dx,X,t,u_exact)
 
@@ -124,17 +124,17 @@
        u_avg(0) = 1.0d0/3.0d0
 
        do j=1,nt
-              call Godunov(u_avg, du_avg, dx, N)
+              call Lax(u_avg, du_avg, dx, N)
               do i=0,N-1
                      u1(i) = u_avg(i)+dt*du_avg(i)
               enddo
 
-              call Godunov(u1,du_avg,dx,N)
+              call Lax(u1,du_avg,dx,N)
               do i=0,N-1
                      u2(i) = 3.0d0/4.0d0*u_avg(i)+1.0d0/4.0d0*(u1(i)+dt*du_avg(i))
               enddo
 
-              call Godunov(u2,du_avg,dx,N)
+              call Lax(u2,du_avg,dx,N)
               do i=0,N-1
                      u_avg(i) = 1.0d0/3.0d0*u_avg(i)+2.0d0/3.0d0*(u2(i)+dt*du_avg(i))
               enddo
@@ -196,23 +196,27 @@
 
 
 
-       subroutine Godunov(u_avg, du_avg, dx, N)
+       subroutine Lax(u_avg, du_avg, dx, N)
        implicit none
        integer :: i, N, s
        real(8) :: u_avg(0:N-1), du_avg(0:N-1), dx
+       real(8) :: flux_P(0:N-1), flux_N(0:N-1)
        real(8) :: u_reconl(0:N-1), u_reconr(0:N-1), f(0:N-1)
+       real(8) :: alpha
+
+       alpha=0.d0
+       do i=0, N-1
+              alpha = MAX(alpha, ABS(u_avg(i)))
+       enddo
 
        call Recon(u_avg, u_reconl, u_reconr, dx, N)
-       do i=0, N-1
-              if(u_reconl(i).LE.u_reconr(i)) then
-                     f(i) = MIN(0.5d0*u_reconl(i)*u_reconl(i),0.5d0*u_reconr(i)*u_reconr(i))
-                     if(u_reconl(i)*u_reconr(i).LT.0.0d0) f(i) = 0.0d0
-              else
-                     f(i) = MAX(0.5d0*u_reconl(i)*u_reconl(i),0.5d0*u_reconr(i)*u_reconr(i))
-              endif
-       enddo
 
        do i=0,N-1
+              f(i) = 0.5d0*(0.5d0*u_reconl(i)*u_reconl(i)+0.5d0*u_reconr(i)*u_reconr(i)-alpha*(u_reconr(i)-u_reconl(i)))
+       enddo
+       do i=0, N-1
               du_avg(i) = -(f(i)-f(MOD(i-1+N, N)))/dx
        enddo
-       endsubroutine Godunov
+
+       return
+       end subroutine Lax

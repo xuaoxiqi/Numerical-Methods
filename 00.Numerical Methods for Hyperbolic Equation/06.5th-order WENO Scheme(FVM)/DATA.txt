@@ -1,4 +1,4 @@
-WENO Scheme(FVM):
+WENO Scheme(FVM)[Godunov numerical flux]:
 alpha = dt/dx = 0.1
 Number of points		L1 Normal			Order
 40				2.48102783311811292E-006	4.2835233817013992	
