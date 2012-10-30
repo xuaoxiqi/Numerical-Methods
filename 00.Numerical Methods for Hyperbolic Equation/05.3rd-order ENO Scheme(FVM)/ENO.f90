@@ -13,7 +13,7 @@
        real(8) :: u_exact(0:N), X(0:N)
 
        alpha = 0.5d0
-       dx = 2.0d0*Pi/DBLE(N)
+       dx = 2.0d0*Pi/float(N)
        dt = alpha*dx
        t = 0.1d0*Pi
        nt = NINT(t/dt)
@@ -111,113 +111,113 @@
 
 
 
-       subroutine ENO(N,dx,X,dt,nt,u_avg)
-       implicit none
-       integer :: N, i, j, nt
-       real(8) :: dx, dt, ul, ur
-       real(8) :: X(0:N), u_avg(0:N-1), du_avg(0:N-1), f(N), u1(0:N-1), u2(0:N-1)
+        subroutine ENO(N,dx,X,dt,nt,u_avg)
+        implicit none
+        integer :: N, i, j, nt
+        real(8) :: dx, dt, ul, ur
+        real(8) :: X(0:N), u_avg(0:N-1), du_avg(0:N-1), f(N), u1(0:N-1), u2(0:N-1)
 
-       do i=1,N-1
-              u_avg(i) = 1.0d0/3.0d0+4.0d0/3.0d0/dx*SIN(X(i))*SIN(0.5d0*dx)
-       enddo
+        do i=1,N-1
+            u_avg(i) = 1.0d0/3.0d0+4.0d0/3.0d0/dx*SIN(X(i))*SIN(0.5d0*dx)
+        enddo
+        u_avg(0) = 1.0d0/3.0d0
 
-       u_avg(0) = 1.0d0/3.0d0
+        do j=1,nt
+            call Godunov(u_avg,du_avg,dx,N)
+            do i=0,N-1
+                u1(i) = u_avg(i)+dt*du_avg(i)
+            enddo
 
-       do j=1,nt
-              call Godunov(u_avg, du_avg, dx, N)
-              do i=0,N-1
-                     u1(i) = u_avg(i)+dt*du_avg(i)
-              enddo
+            call Godunov(u1,du_avg,dx,N)
+            do i=0,N-1
+                u2(i) = 3.0d0/4.0d0*u_avg(i)+1.0d0/4.0d0*(u1(i)+dt*du_avg(i))
+            enddo
 
-              call Godunov(u1,du_avg,dx,N)
-              do i=0,N-1
-                     u2(i) = 3.0d0/4.0d0*u_avg(i)+1.0d0/4.0d0*(u1(i)+dt*du_avg(i))
-              enddo
+            call Godunov(u2,du_avg,dx,N)
+            do i=0,N-1
+                u_avg(i) = 1.0d0/3.0d0*u_avg(i)+2.0d0/3.0d0*(u2(i)+dt*du_avg(i))
+            enddo
+        enddo
 
-              call Godunov(u2,du_avg,dx,N)
-              do i=0,N-1
-                     u_avg(i) = 1.0d0/3.0d0*u_avg(i)+2.0d0/3.0d0*(u2(i)+dt*du_avg(i))
-              enddo
-       enddo
-
-
-!       do i=0,N-1
-!              write(*,*) 'x0=',X(i),'u(i)=',u_avg(i)
-!       enddo
-!       write(*,*) 'x0=',X(N),'u(i)=',u_avg(0)
-
-       return
-       end subroutine ENO
+        return
+        end subroutine ENO
 
 
+        subroutine Godunov(u_avg, du_avg, dx, N)
+        implicit none
+        integer :: i, N, s
+        real(8) :: u_avg(0:N-1), du_avg(0:N-1), dx
+        real(8) :: u_reconl(0:N-1), u_reconr(0:N-1), f(0:N-1)
 
-       subroutine Recon(u_avg, u_reconl, u_reconr, dx, N)
-       implicit none
-       integer :: i, N, s
-       real(8) :: u_avg(0:N-1), u_reconl(0:N-1), u_reconr(0:N-1), dx
+        call Recon(u_avg,u_reconl,u_reconr,dx,N)
+        do i=0, N-1
+            if(u_reconl(i).LE.u_reconr(i)) then
+                f(i) = MIN(0.5d0*u_reconl(i)*u_reconl(i),0.5d0*u_reconr(i)*u_reconr(i))
+                if(u_reconl(i)*u_reconr(i).LT.0.0d0) f(i) = 0.0d0
+            else
+                f(i) = MAX(0.5d0*u_reconl(i)*u_reconl(i),0.5d0*u_reconr(i)*u_reconr(i))
+            endif
+        enddo
 
-       do i=0,N-1
-              call stencil(u_avg, 3, i, N, s)
-              select case (s)
-              case (-2)
-              u_reconl(i) = 1.0d0/3.0d0*u_avg(MOD(i-2+N,N))-7.0d0/6.0d0*u_avg(MOD(i-1+N,N))+11.0d0/6.0d0*u_avg(i)
-              u_reconr(MOD(i-1+N, N)) = -1.0d0/6.0d0*u_avg(MOD(i-2+N,N))+5.0d0/6.0d0*u_avg(MOD(i-1+N,N))+1.0d0/3.0d0*u_avg(i)
-              case (0)
-              u_reconl(i) = -1.0d0/6.0d0*u_avg(MOD(i-1+N,N))+5.0d0/6.0d0*u_avg(i)+1.0d0/3.0d0*u_avg(MOD(i+1,N))
-              u_reconr(MOD(i-1+N, N)) = -1.0d0/6.0d0*u_avg(MOD(i+1,N))+5.0d0/6.0d0*u_avg(i)+1.0d0/3.0d0*u_avg(MOD(i-1+N,N))
-              case (2)
-              u_reconl(i) = 1.0d0/3.0d0*u_avg(i)+5.0d0/6.0d0*u_avg(MOD(i+1,N))-1.0d0/6.0d0*u_avg(MOD(i+2,N))
-              u_reconr(MOD(i-1+N, N)) = 1.0d0/3.0d0*u_avg(MOD(i+2,N))-7.0d0/6.0d0*u_avg(MOD(i+1,N))+11.0d0/6.0d0*u_avg(i)
-              end select
-       enddo
-       end subroutine Recon
+        do i=0,N-1
+            du_avg(i) = -(f(i)-f(MOD(i-1+N, N)))/dx
+        enddo
+
+        return
+        endsubroutine Godunov
 
 
-       subroutine Godunov(u_avg, du_avg, dx, N)
-       implicit none
-       integer :: i, N, s
-       real(8) :: u_avg(0:N-1), du_avg(0:N-1), dx
-       real(8) :: u_reconl(0:N-1), u_reconr(0:N-1), f(0:N-1)
+        subroutine Recon(u_avg, u_reconl, u_reconr, dx, N)
+        implicit none
+        integer :: i, N, s
+        real(8) :: u_avg(0:N-1), u_reconl(0:N-1), u_reconr(0:N-1), dx
 
-       call Recon(u_avg, u_reconl, u_reconr, dx, N)
-       do i=0, N-1
-              if(u_reconl(i).LE.u_reconr(i)) then
-                     f(i) = MIN(0.5d0*u_reconl(i)*u_reconl(i),0.5d0*u_reconr(i)*u_reconr(i))
-                     if(u_reconl(i)*u_reconr(i).LT.0.0d0) f(i) = 0.0d0
-              else
-                     f(i) = MAX(0.5d0*u_reconl(i)*u_reconl(i),0.5d0*u_reconr(i)*u_reconr(i))
-              endif
-       enddo
+        do i=0,N-1
+            call stencil(u_avg,3,i,N,s)
+            select case (s)
+                case (-2)
+                    u_reconl(i) = 1.0d0/3.0d0*u_avg(MOD(i-2+N,N))-7.0d0/6.0d0*u_avg(MOD(i-1+N,N))+11.0d0/6.0d0*u_avg(i)
+                    u_reconr(MOD(i-1+N, N)) = -1.0d0/6.0d0*u_avg(MOD(i-2+N,N))+5.0d0/6.0d0*u_avg(MOD(i-1+N,N))+1.0d0/3.0d0*u_avg(i)
+                case (0)
+                    u_reconl(i) = -1.0d0/6.0d0*u_avg(MOD(i-1+N,N))+5.0d0/6.0d0*u_avg(i)+1.0d0/3.0d0*u_avg(MOD(i+1,N))
+                    u_reconr(MOD(i-1+N, N)) = -1.0d0/6.0d0*u_avg(MOD(i+1,N))+5.0d0/6.0d0*u_avg(i)+1.0d0/3.0d0*u_avg(MOD(i-1+N,N))
+                case (2)
+                    u_reconl(i) = 1.0d0/3.0d0*u_avg(i)+5.0d0/6.0d0*u_avg(MOD(i+1,N))-1.0d0/6.0d0*u_avg(MOD(i+2,N))
+                    u_reconr(MOD(i-1+N, N)) = 1.0d0/3.0d0*u_avg(MOD(i+2,N))-7.0d0/6.0d0*u_avg(MOD(i+1,N))+11.0d0/6.0d0*u_avg(i)
+            end select
+        enddo
 
-       do i=0,N-1
-              du_avg(i) = -(f(i)-f(MOD(i-1+N, N)))/dx
-       enddo
-       endsubroutine Godunov
-
+        return
+        end subroutine Recon
 
 
        subroutine stencil(u, m, k, N, s)
-       implicit none
-       integer :: i, j, m, s, k, N, k_temp
-       real(8) :: u(0:N-1), u_differ(0:N-1)
+        implicit none
+        integer :: i, j, m, s, k, N, k_temp
+        real(8) :: u(0:N-1), u_differ(0:N-1)
 
-       do j=0, N-1
-              u_differ(j) = u(MOD(j+1,N))-u(j)
-       enddo
+        do j=0, N-1
+            u_differ(j) = u(MOD(j+1,N))-u(j)
+        enddo
 
-       k_temp = k;
-       s = 0
-       do i=2, m
-              if(u_differ(MOD(k_temp-1+N,N)).GT.u_differ(MOD(k_temp+N,N))) then
-                     s = s+1
-              else
-                     s = s-1
-                     k_temp = k_temp-1
-              endif
-              do j=0, N-1
-                     u_differ(j) = u_differ(MOD(j+1,N))-u_differ(j)
-              enddo
-       enddo
-       return
-       end subroutine stencil
+        k_temp = k;
+        s = 0
+
+        do i=2, m
+
+            if(u_differ(MOD(k_temp-1+N,N)).LE.u_differ(MOD(k_temp+N,N))) then
+                s = s-1
+                k_temp = k_temp-1
+            else
+                s = s+1
+            endif
+
+            do j=0, N-1
+                u_differ(j) = u_differ(MOD(j+1,N))-u_differ(j)
+            enddo
+
+        enddo
+
+        return
+        end subroutine stencil
 
