@@ -6,17 +6,19 @@
 
         program main
         implicit none
-        integer, parameter :: N=320
+        integer, parameter :: N=10
         real(8), parameter :: Pi=3.1415926535897932385d0
         integer :: i, nt
-        real(8) :: alpha, dx, dt, t, error_0, error_1
+        real(8) :: dx, dt, t, error_0, error_1
+        real(8) :: alpha
         real(8) :: u(0:N-1)
         real(8) :: u_exact(0:N), X(0:N-1)
 
         dx = 2.0d0*Pi/float(N)
-        alpha = 0.1d0
+        !!!dt = 0.1*dx**(5.0d0/3.0d0)
+        alpha = 0.01d0
         dt = alpha*dx
-        t = 0.1d0*Pi
+        t = 0.1*Pi
         nt = NINT(t/dt)
 
         do i=0,N-1
@@ -38,14 +40,13 @@
             error_0 = MAX(error_0, ABS(u_exact(i)-u(i)))
             error_1 = ABS(u_exact(i)-u(i))+error_1
         enddo
-        error_1 = error_1/N
+        error_1 = error_1/float(N)
 
         write(*,*) 'Number of points is:',N
-        write(*,*) 'alpha=', alpha
-        write(*,*) 'LInfinity Normal is:', error_0
+        write(*,*) 'dx =',dx
+        write(*,*) 'dt =',dt
+        !write(*,*) 'LInfinity Normal is:', error_0
         write(*,*) 'L1        Normal is:', error_1
-
-
 
         open(unit=01,file='./result.dat',status='unknown')
         write(01,101)
@@ -150,7 +151,7 @@
         call Recon(dx,N,f_negative,f_l,f)
 
         do i=0,N-1
-            f(i) = f_l(i)+f_r(i)
+            f(i) = f_l(MOD(i+1,N))+f_r(i)
         enddo
 
         do i=0,N-1
@@ -187,10 +188,10 @@
             !compute weights
             beta(0) = 13.d0/12.d0*(u(i)-2.0d0*u(MOD(i+1,N))+u(MOD(i+2,N)))**2 &
                     +0.25d0*(3.d0*u(i)-4.d0*u(MOD(i+1,N))+u(MOD(i+2,N)))**2
-            beta(1) = 13.d0/12.d0*(u(MOD(i-1+N,N))-2.d0*u(i)+u(MOD(i+1,N)))**2 &
+            beta(1) = 13.d0/12.d0*(u(MOD(i-1+N,N))-2.0d0*u(i)+u(MOD(i+1,N)))**2 &
                     +0.25d0*(u(MOD(i-1+N,N))-u(MOD(i+1,N)))**2
             beta(2) = 13.0d0/12.0d0*(u(MOD(i-2+N,N))-2.d0*u(MOD(i-1+N,N))+u(i))**2 &
-                    +0.25d0*(u(MOD(i-2+N,N))-4.0d0*u(MOD(i-1+N,N))+3.d0*u(i))**2
+                    +0.25d0*(u(MOD(i-2+N,N))-4.0d0*u(MOD(i-1+N,N))+3.0d0*u(i))**2
 
             alphar(0) = 0.3d0/(beta(0)+epsilon)/(beta(0)+epsilon)
             alphar(1) = 0.6d0/(beta(1)+epsilon)/(beta(1)+epsilon)

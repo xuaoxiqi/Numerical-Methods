@@ -6,17 +6,19 @@
 
         program main
         implicit none
-        integer, parameter :: N=640
+        integer, parameter :: N=320
         real(8), parameter :: Pi=3.1415926535897932385d0
         integer :: i, nt
-        real(8) :: alpha, dx, dt, t, u_error
+        real(8) :: dx, dt, t, error_0, error_1
+        real(8) :: alpha
         real(8) :: u_avg(0:N-1)
         real(8) :: u_exact(0:N), X(0:N)
 
+        dx = 2.0d0*Pi/float(N)
+        !!!dt = 0.1*dx**(5.0d0/3.0d0)
         alpha = 0.01d0
-        dx = 2.0d0*Pi/DBLE(N)
         dt = alpha*dx
-        t = 0.1d0*Pi
+        t = 0.1*Pi
         nt = NINT(t/dt)
 
         do i=0,N
@@ -24,23 +26,28 @@
         enddo
 
         write(*,*)
-        write(*,*) 'WENO SCHEME(FINITE VOLUME METHOD):'
+        write(*,*) 'WENO SCHEME(FINITE VOLUME METHOD)'
+        write(*,*) 'Lax-Friedrichs numerical flux'
         write(*,*) '****************************************'
 
         call exact(N,dx,X,t,u_exact)
 
         call WENO(N,dx,X,dt,nt,u_avg)
 
-        !!! calculate error
-        u_error = 0.0d0
+       !!! calculate error
+        error_0 = 0.0d0
+        error_1 = 0.0d0
         do i=0,N-1
-            u_error = (u_exact(i)-u_avg(i))*(u_exact(i)-u_avg(i))+u_error
+            error_0 = MAX(error_0, ABS(u_exact(i)-u_avg(i)))
+            error_1 = ABS(u_exact(i)-u_avg(i))+error_1
         enddo
-        u_error = u_error*dx
+        error_1 = error_1/float(N)
 
         write(*,*) 'Number of points is:',N
-        write(*,*) 'alpah = ', alpha
-        write(*,*) 'Error is:', u_error
+        write(*,*) 'dx =',dx
+        write(*,*) 'dt =',dt
+        !write(*,*) 'LInfinity Normal is:', error_0
+        write(*,*) 'L1        Normal is:', error_1
 
         open(unit=01,file='./result.dat',status='unknown')
         write(01,101)
@@ -149,7 +156,7 @@
         call Recon(dx,N,u_avg,u_l,u_r)
 
         do i=0,N-1
-            f(i) = 0.5d0*(0.5d0*u_l(i)*u_l(i)+0.5d0*u_r(i)*u_r(i)-alpha*(u_r(i)-u_l(i)))
+            f(i) = 0.5d0*(0.5d0*u_l(MOD(i+1+N,N))*u_l(MOD(i+1+N,N))+0.5d0*u_r(i)*u_r(i)-alpha*(u_r(i)-u_l(MOD(i+1+N,N))))
         enddo
         do i=0, N-1
             du_avg(i) = -(f(i)-f(MOD(i-1+N,N)))/dx
