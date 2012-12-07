@@ -1,33 +1,30 @@
 
-
-!!!    This program solves Burgers Equation using WENO Scheme with Finite Difference Method.
+!!!    This program solves Burgers Equation using WENO Scheme in Finite Difference Formulation.
+!!!    with Lax-Friedrichs Flux
 !!!    This work is licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License.
 !!!    Ao Xu, Profiles: <http://www.linkedin.com/pub/ao-xu/30/a72/a29>
 
         program main
         implicit none
-        integer, parameter :: N=10
-        real(8), parameter :: Pi=3.1415926535897932385d0
+        integer, parameter :: N=320
+        real(8), parameter :: Pi=3.1415926535898d0
         integer :: i, nt
-        real(8) :: dx, dt, t, error_0, error_1
-        real(8) :: alpha
-        real(8) :: u(0:N-1)
-        real(8) :: u_exact(0:N), X(0:N-1)
+        real(8) :: dx, dt, t
+        real(8) :: error_0, error_1
+        real(8) :: X(N), u(-1:N+3), u_exact(N)
 
-        dx = 2.0d0*Pi/float(N)
-        !!!dt = 0.1*dx**(5.0d0/3.0d0)
-        alpha = 0.01d0
-        dt = alpha*dx
-        t = 0.1*Pi
+        dx = 2.0d0*Pi/float(N-1)
+        dt = 0.01*dx
+        t = 0.1d0*Pi
         nt = NINT(t/dt)
-
-        do i=0,N-1
-            X(i) = float(i)*dx
+        do i=1,N
+            X(i) = (i-1)*dx
         enddo
 
         write(*,*)
-        write(*,*) 'WENO SCHEME(FINITE DIFFERENCE METHOD):'
-        write(*,*) '****************************************'
+        write(*,*) 'WENO Scheme in Finite Difference Formulation:'
+        write(*,*) 'with Lax-Friedrichs Flux'
+        write(*,*) '*********************************************'
 
         call exact(N,dx,X,t,u_exact)
 
@@ -36,16 +33,17 @@
        !!! calculate error
         error_0 = 0.0d0
         error_1 = 0.0d0
-        do i=0,N-1
+        do i=1,N
             error_0 = MAX(error_0, ABS(u_exact(i)-u(i)))
             error_1 = ABS(u_exact(i)-u(i))+error_1
         enddo
         error_1 = error_1/float(N)
 
-        write(*,*) 'Number of points is:',N
+        write(*,*) 'N =',N
+        write(*,*) 't =',t
         write(*,*) 'dx =',dx
         write(*,*) 'dt =',dt
-        !write(*,*) 'LInfinity Normal is:', error_0
+        write(*,*) 'LInfinity Normal is:', error_0
         write(*,*) 'L1        Normal is:', error_1
 
         open(unit=01,file='./result.dat',status='unknown')
@@ -53,12 +51,11 @@
         write(01,102)
         write(01,103) N
 
-        do i = 0,N-1
+        do i=1,N
             write(01,100) X(i), u(i), u_exact(i)
         enddo
 
         close(01)
-        print*,'****************************************'
 
 100     format(2x,10(e12.6,'      '))
 101     format('Title="Burgers Equation(WENO Scheme)"')
@@ -73,9 +70,9 @@
         implicit none
         integer :: i, N, j, k
         real(8) :: dx, x0, temp, t
-        real(8) :: X(0:N-1), u_exact(0:N)
+        real(8) :: X(N), u_exact(N)
 
-        do i=0,N-1
+        do i=1,N
             x0 = X(i)
             do
                 temp = x0
@@ -97,31 +94,51 @@
         implicit none
         integer :: N, i, j, nt
         real(8) :: dx, dt
-        real(8) :: X(0:N-1), u(0:N-1), du(0:N-1), u1(0:N-1), u2(0:N-1)
+        real(8) :: X(N), u(-1:N+3), du(N), u1(-1:N+3), u2(-1:N+3)
 
-        do i=0,N-1
+        do i=1,N
             u(i) = 1.0d0/3.0d0+2.0d0/3.0d0*SIN(X(i))
         enddo
+        u(N+1) = u(2)
+        u(N+2) = u(3)
+        u(N+3) = u(4)
+        u(0) = u(N-1)
+        u(-1) = u(N-2)
 
         do j=1,nt
 
             call Lax(dx,N,u,du)
-            do i=0,N-1
+            do i=1,N
                 u1(i) = u(i)+dt*du(i)
             enddo
+            u1(N+1) = u1(2)
+            u1(N+2) = u1(3)
+            u1(N+3) = u1(4)
+            u1(0) = u1(N-1)
+            u1(-1) = u1(N-2)
 
             call Lax(dx,N,u1,du)
-            do i=0,N-1
+            do i=1,N
                 u2(i) = 3.0d0/4.0d0*u(i)+1.0d0/4.0d0*(u1(i)+dt*du(i))
             enddo
+            u2(N+1) = u2(2)
+            u2(N+2) = u2(3)
+            u2(N+3) = u2(4)
+            u2(0) = u2(N-1)
+            u2(-1) = u2(N-2)
 
             call Lax(dx,N,u2,du)
-            do i=0,N-1
+            do i=1,N
                 u(i) = 1.0d0/3.0d0*u(i)+2.0d0/3.0d0*(u2(i)+dt*du(i))
             enddo
 
-        enddo
+            u(N+1) = u(2)
+            u(N+2) = u(3)
+            u(N+3) = u(4)
+            u(0) = u(N-1)
+            u(-1) = u(N-2)
 
+        enddo
 
         return
         end subroutine WENO
@@ -130,68 +147,68 @@
         subroutine Lax(dx,N,u,du)
         implicit none
         integer :: i, N
-        real(8) :: u(0:N-1), du(0:N-1), dx
-        real(8) :: f_positive(0:N-1), f_negative(0:N-1)
-        real(8) :: f_l(0:N-1), f_r(0:N-1), f(0:N-1)
+        real(8) :: u(-1:N+3), du(N), dx
+        real(8) :: f_positive(-1:N+3), f_negative(-1:N+3)
+        real(8) :: f_l(N+1), f_r(N+1), f(0:N)
         real(8) :: alpha
 
         alpha=0.0d0
-        do i=0,N-1
+        do i=1,N
             alpha = MAX(alpha, ABS(u(i)))
         enddo
 
-        do i=0,N-1
+        do i=-1,N+3
             f_positive(i) = 0.5d0*(0.5d0*u(i)*u(i)+alpha*u(i))
         enddo
         call Recon(dx,N,f_positive,f,f_r)
 
-        do i=0,N-1
+        do i=-1,N+3
             f_negative(i) = 0.5d0*(0.5d0*u(i)*u(i)-alpha*u(i))
         enddo
+
         call Recon(dx,N,f_negative,f_l,f)
 
-        do i=0,N-1
-            f(i) = f_l(MOD(i+1,N))+f_r(i)
+        do i=1,N
+            f(i) = f_l(i+1)+f_r(i)
         enddo
+        f(0) = f(N-1)
 
-        do i=0,N-1
-            du(i) = -(f(i)-f(MOD(i-1+N,N)))/dx
+        do i=1,N
+            du(i) = -(f(i)-f(i-1))/dx
         enddo
 
         return
         end subroutine Lax
 
 
-        !u_r = u_{i+1/2}
-        !u_l = u_{i-1/2}
 
         subroutine Recon(dx,N,u,u_l,u_r)
         implicit none
         integer :: i, N, j
-        real(8) :: u(0:N-1), u_l(0:N-1), u_r(0:N-1), dx
+        real(8) :: u(-1:N+3), u_l(N+1), u_r(N+1), dx
         real(8) :: beta(0:2)
         real(8) :: alphal(0:2), alphar(0:2), omgl(0:2), omgr(0:2), ul(0:2), ur(0:2)
         real(8) :: epsilon
 
         epsilon = 1e-6
 
-        do i=0,N-1
+        do i=1,N+1
 
-            ur(0) = 1.0d0/3.0d0*u(i)+5.0d0/6.0d0*u(MOD(i+1,N))-1.0d0/6.0d0*u(MOD(i+2,N))
-            ur(1) = -1.0d0/6.0d0*u(MOD(i-1+N,N))+5.0d0/6.0d0*u(i)+1.0d0/3.0d0*u(MOD(i+1,N))
-            ur(2) = 1.0d0/3.0d0*u(MOD(i-2+N,N))-7.0d0/6.0d0*u(MOD(i-1+N,N))+11.0d0/6.0d0*u(i)
+            ur(0) = 1.0d0/3.0d0*u(i)+5.0d0/6.0d0*u(i+1)-1.0d0/6.0d0*u(i+2)
+            ur(1) = -1.0d0/6.0d0*u(i-1)+5.0d0/6.0d0*u(i)+1.0d0/3.0d0*u(i+1)
+            ur(2) = 1.0d0/3.0d0*u(i-2)-7.0d0/6.0d0*u(i-1)+11.0d0/6.0d0*u(i)
 
-            ul(0) = 11.0d0/6.0d0*u(i)-7.0d0/6.0d0*u(MOD(i+1,N))+1.0d0/3.0d0*u(MOD(i+2,N))
-            ul(1) = 1.0d0/3.0d0*u(MOD(i-1+N,N))+5.0d0/6.0d0*u(i)-1.0d0/6.0d0*u(MOD(i+1,N))
-            ul(2) = -1.0d0/6.0d0*u(MOD(i-2+N,N))+5.0d0/6.0d0*u(MOD(i-1+N,N))+1.0d0/3.0d0*u(i)
+            ul(0) = 11.0d0/6.0d0*u(i)-7.0d0/6.0d0*u(i+1)+1.0d0/3.0d0*u(i+2)
+            ul(1) = 1.0d0/3.0d0*u(i-1)+5.0d0/6.0d0*u(i)-1.0d0/6.0d0*u(i+1)
+            ul(2) = -1.0d0/6.0d0*u(i-2)+5.0d0/6.0d0*u(i-1)+1.0d0/3.0d0*u(i)
 
             !compute weights
-            beta(0) = 13.d0/12.d0*(u(i)-2.0d0*u(MOD(i+1,N))+u(MOD(i+2,N)))**2 &
-                    +0.25d0*(3.d0*u(i)-4.d0*u(MOD(i+1,N))+u(MOD(i+2,N)))**2
-            beta(1) = 13.d0/12.d0*(u(MOD(i-1+N,N))-2.0d0*u(i)+u(MOD(i+1,N)))**2 &
-                    +0.25d0*(u(MOD(i-1+N,N))-u(MOD(i+1,N)))**2
-            beta(2) = 13.0d0/12.0d0*(u(MOD(i-2+N,N))-2.d0*u(MOD(i-1+N,N))+u(i))**2 &
-                    +0.25d0*(u(MOD(i-2+N,N))-4.0d0*u(MOD(i-1+N,N))+3.0d0*u(i))**2
+            beta(0) = 13.d0/12.d0*(u(i)-2.0d0*u(i+1)+u(i+2))**2 &
+                    +0.25d0*(3.d0*u(i)-4.d0*u(i+1)+u(i+2))**2
+            beta(1) = 13.d0/12.d0*(u(i-1)-2.0d0*u(i)+u(i+1))**2 &
+                    +0.25d0*(u(i-1)-u(i+1))**2
+            beta(2) = 13.0d0/12.0d0*(u(i-2)-2.d0*u(i-1)+u(i))**2 &
+                    +0.25d0*(u(i-2)-4.0d0*u(i-1)+3.0d0*u(i))**2
 
             alphar(0) = 0.3d0/(beta(0)+epsilon)/(beta(0)+epsilon)
             alphar(1) = 0.6d0/(beta(1)+epsilon)/(beta(1)+epsilon)
