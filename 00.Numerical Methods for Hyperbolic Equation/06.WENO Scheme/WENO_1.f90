@@ -7,7 +7,7 @@
 
         program main
         implicit none
-        integer, parameter :: N=40
+        integer, parameter :: N=20
         real(8), parameter :: Pi=3.1415926535898d0
         integer :: i, nt
         real(8) :: dx, dt, t, error_0, error_1
