@@ -2,50 +2,50 @@
 
 ## Code List
 
-### Numerical Methods for Hyperbolic Equation
+### Hyperbolic Equations
 
-*1st-order Upwind Scheme
-*1st-order Godunov Scheme
-*3rd-order Finite Volume Scheme
-*TVD Limiter
-*TVB Limiter
-*3rd-order ENO Scheme(FVM)
-*5th-order WENO Scheme(FVM)
-*5th-order WENO Scheme(FDM)
+* 1st-order Upwind Scheme
+* 1st-order Godunov Scheme
+* 3rd-order Finite Volume Scheme
+* TVD Limiter
+* TVB Limiter
+* 3rd-order ENO Scheme(FVM)
+* 5th-order WENO Scheme(FVM)
+* 5th-order WENO Scheme(FDM)
 
 ###Systems of Linear Algebraic Equations
 
-*Gauss Elimination Method
-*Thomas Method for Tridiagonal Systems of Equations
+* Gauss Elimination Method
+* Thomas Method for Tridiagonal Systems of Equations
 
 ###Eigenproblems
 
-*Jacobi Method
-*Rayleigh Method
-*The Power Method
-*Inverse Power Method
+* Jacobi Method
+* Rayleigh Method
+* The Power Method
+* Inverse Power Method
 
 ###Nonlinear Equations
 
-*Bisection Methods
-*Newton Methods
-*Secant Methods
-*Polynomial Approximation and Interpolation
-*Lagrange interpolation Methods
+* Bisection Methods
+* Newton Methods
+* Secant Methods
+* Polynomial Approximation and Interpolation
+* Lagrange interpolation Methods
 
 ###Numerical Differentiation
 
 ###Numerical Integration
 
-*Gauss-Legendre Integration Method
-*Romberg Integration Method
-*Simpson Integration Method
+* Gauss-Legendre Integration Method
+* Romberg Integration Method
+* Simpson Integration Method
 
 ###One-Dimensional Initial-Value Ordinary Differential Equations
 
-*Euler Method
-*4th-order Runge-Kutta Method
-*One-Dimensional Boundary-Value Ordinary Differential Equations
+* Euler Method
+* 4th-order Runge-Kutta Method
+* One-Dimensional Boundary-Value Ordinary Differential Equations
 
 ## Licence
 
