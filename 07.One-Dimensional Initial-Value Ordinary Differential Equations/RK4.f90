@@ -12,19 +12,23 @@
     integer :: i
 
     dx = (1.0_dp-0.0_dp)/(N-1)
-    do i=1,N
+    forall (i=1:N)
         x(i) = (i-1)*dx
-    enddo
+    end forall
     y = 0.0_dp
     y(1) = 1.0_dp
 
-    write(*,*) 'Euler Method: '
+    write(*,*) '4-Order Runge-Kutta method Method: '
     write(*,*) 'ODE: y`=y^2-x^2'
     write(*,*) 'dx = ',dx
     write(*,*) 'B.C.: x(1)=',x(1),'x(N)=',x(N)
     write(*,*) 'B.C.: y(1)=',y(1)
 
     call RK4(x,y,dx,N)
+
+    do i=1,N
+        write(*,*) "x=",x(i)," ,y=",y(i)
+    enddo
 
     stop
     end program main
@@ -44,7 +48,6 @@
         k3 = f((x(i)+0.5_dp*dx),(y(i)+0.5_dp*dx*k2))
         k4 = f(x(i+1),(y(i)+dx*k3))
         y(i+1) = y(i)+dx*(k1+2.0_dp*k2+2.0_dp*k3+k4)/6.0_dp
-        write(*,*) 'x=',x(i+1),'y=',y(i+1)
     enddo
 
     return

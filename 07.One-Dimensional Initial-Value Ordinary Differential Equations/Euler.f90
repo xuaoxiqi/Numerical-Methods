@@ -12,9 +12,9 @@
     integer :: i
 
     dx = (1.0_dp-0.0_dp)/(N-1)
-    do i=1,N
+    forall (i=1:N)
         x(i) = (i-1)*dx
-    enddo
+    end forall
     y = 0.0_dp
     y(1) = 1.0_dp
 
@@ -25,6 +25,10 @@
     write(*,*) 'B.C.: y(1)=',y(1)
 
     call Euler(x,y,dx,N)
+
+    do i=1,N
+        write(*,*) "x=",x(i)," ,y=",y(i)
+    enddo
 
     stop
     end program main
@@ -42,7 +46,6 @@
         yp = y(i)+dx*f(x(i),y(i))
         yc = y(i)+dx*f(x(i+1),yp)
         y(i+1) = (yp+yc)/2.0_dp
-        write(*,*) "x=",x(i+1), "y=", y(i+1)
     enddo
 
     return
