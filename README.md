@@ -4,11 +4,9 @@
 
 ### Hyperbolic Equations
 
-* 1st-order Upwind Scheme
-* 1st-order Godunov Scheme
+* Upwind Scheme / Godunov Scheme
 * 3rd-order Finite Volume Scheme
-* TVD Limiter
-* TVB Limiter
+* TVD Limiter / TVB Limiter
 * 3rd-order ENO Scheme(FVM)
 * 5th-order WENO Scheme(FVM)
 * 5th-order WENO Scheme(FDM)
