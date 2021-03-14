@@ -1,6 +1,6 @@
-#define linear_interpolation
+!~#define linear_interpolation
 !~#define quadratic_interpolation
-!~#define cubic_interpolation
+#define cubic_interpolation
 
 #define outputData
 
@@ -8,20 +8,18 @@
     implicit none
     real(8), parameter :: Pi=4.0d0*datan(1.0d0)
     integer, parameter :: nx=101
-    real(8) :: xExact(nx), yExact(nx)
+    real(8) :: xExact(nx), uExact(nx)
     
-    integer, parameter :: ax=10
-    real(8) :: xRaw(ax), yRaw(ax)
+    integer, parameter :: meshX=10
+    real(8) :: xMesh(meshX), yMesh(meshX)
     
-    integer, parameter :: bx=6
-    real(8) :: xInterpolated(bx), yInterpolated(bx)
-    
+    integer, parameter :: particleX=100
+    real(8) :: xInterpolated(particleX), uInterpolated(particleX)
+    integer :: iLoc
     integer :: i, j
     real(8) :: dx, dx2
-    integer :: xLoc, xLoc_plusOne
-    real(8) :: yLoc, yLoc_plusOne
-    real(8) :: point0X, point0Y
-    real(8) :: point1X, point1Y, point2X, point2Y,  point3X, point3Y,  point4X, point4Y
+    real(8) :: point0X, point0U
+    real(8) :: point1X, point1U, point2X, point2U,  point3X, point3U,  point4X, point4U
     integer :: findLoc
     integer :: locate
     
@@ -57,88 +55,93 @@
     !--exact solution
     do i=1,nx
         xExact(i) = dble(i-1)/dble(nx-1)*2.0d0*Pi
-        yExact(i) = dsin(xExact(i))
+        uExact(i) = dsin(xExact(i))
     enddo
 #ifdef outputData
     open(unit=01,file="exact.dat",status="unknown")
     do i=1,nx
-        write(01,*) xExact(i), yExact(i)
+        write(01,*) xExact(i), uExact(i)
     enddo
     close(01)
 #endif
     
     !--raw data points
-    dx = 2.0d0*Pi/dble(ax)
-    do i=1,ax
-        xRaw(i) = dx/2.0d0+dble(i-1)*dx
-        yRaw(i) = dsin(xRaw(i))
+    dx = 2.0d0*Pi/dble(meshX)
+    do i=1,meshX
+        xMesh(i) = dx/2.0d0+dble(i-1)*dx
+        yMesh(i) = dsin(xMesh(i))
     enddo
 #ifdef outputData
     open(unit=02,file="raw.dat",status="unknown")
-    do i=1,ax
-        write(02,*) xRaw(i), yRaw(i)
+    do i=1,meshX
+        write(02,*) xMesh(i), yMesh(i)
     enddo
     close(02)
 #endif
     
     !--interpolated data points
-    dx2 = 2.0d0*Pi/dble(bx-1)
+    dx2 = 2.0d0*Pi/dble(particleX-1)
     errorL1 = 0.0d0
     errorL2 = 0.0d0
     errorNum = 0
-    do i=1,bx
+    do i=1,particleX
         xInterpolated(i) = dble(i-1)*dx2
-        if( (xInterpolated(i).LT.xRaw(1)).OR.(xInterpolated(i).GT.xRaw(ax)) ) then
+        if( (xInterpolated(i).LT.xMesh(1)).OR.(xInterpolated(i).GT.xMesh(meshX)) ) then
             !~ write(*,*) "xInterpolated(i) is out of the range of X1"
             !~ write(*,*) "i =", i
             !~ write(*,*) "xInterpolated(i) =", xInterpolated(i)
-            !~ write(*,*) "xRaw_min =", xRaw(1),"  , xRaw_max = ", xRaw(ax)
+            !~ write(*,*) "xMesh_min =", xMesh(1),"  , xMesh_mmeshX = ", xMesh(meshX)
             !~ write(*,*) "    "
-            yInterpolated(i) = 0.0d0
+            uInterpolated(i) = 0.0d0
         ELSE
 #ifdef linear_interpolation               
-            j = locate(xRaw, xInterpolated(i), ax) 
-            if(j.EQ.ax) then
-                call linearInterpolation(xRaw(j-1), yRaw(j-1), xRaw(j), yRaw(j), xInterpolated(i), yInterpolated(i))
+            j = locate(xMesh, xInterpolated(i), meshX) 
+            if(j.EQ.meshX) then
+                call linearInterpolation(xMesh(j-1), yMesh(j-1), xMesh(j), yMesh(j), xInterpolated(i), uInterpolated(i))
             else
-                call linearInterpolation(xRaw(j), yRaw(j), xRaw(j+1), yRaw(j+1), xInterpolated(i), yInterpolated(i))
+                call linearInterpolation(xMesh(j), yMesh(j), xMesh(j+1), yMesh(j+1), xInterpolated(i), uInterpolated(i))
             endif
-            errorL1= errorL1+abs(yInterpolated(i)-dsin(xInterpolated(i)))
-            errorL2 = errorL2+(yInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
+            errorL1= errorL1+abs(uInterpolated(i)-dsin(xInterpolated(i)))
+            errorL2 = errorL2+(uInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
             errorNum = errorNum+1
 #endif
 
 #ifdef quadratic_interpolation
-            j = locate(xRaw, xInterpolated(i), ax) 
+            j = locate(xMesh, xInterpolated(i), meshX) 
             if(j.EQ.1) then
-                call quadraticInterpolation(xRaw(j), yRaw(j), xRaw(j+1), yRaw(j+1), xRaw(j+2), yRaw(j+2), xInterpolated(i), yInterpolated(i))
-            elseif(j.EQ.ax) then
-                call quadraticInterpolation(xRaw(j-2), yRaw(j-2), xRaw(j-1), yRaw(j-1), xRaw(j), yRaw(j), xInterpolated(i), yInterpolated(i))
+                call quadraticInterpolation(xMesh(j), yMesh(j), xMesh(j+1), yMesh(j+1), xMesh(j+2), yMesh(j+2), xInterpolated(i), uInterpolated(i))
+            elseif(j.EQ.meshX) then
+                call quadraticInterpolation(xMesh(j-2), yMesh(j-2), xMesh(j-1), yMesh(j-1), xMesh(j), yMesh(j), xInterpolated(i), uInterpolated(i))
             else
-                call quadraticInterpolation(xRaw(j-1), yRaw(j-1), xRaw(j), yRaw(j), xRaw(j+1), yRaw(j+1), xInterpolated(i), yInterpolated(i))
+                call quadraticInterpolation(xMesh(j-1), yMesh(j-1), xMesh(j), yMesh(j), xMesh(j+1), yMesh(j+1), xInterpolated(i), uInterpolated(i))
             endif
-            errorL1= errorL1+abs(yInterpolated(i)-dsin(xInterpolated(i)))
-            errorL2 = errorL2+(yInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
+            errorL1= errorL1+abs(uInterpolated(i)-dsin(xInterpolated(i)))
+            errorL2 = errorL2+(uInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
             errorNum = errorNum+1
 #endif
 
 #ifdef cubic_interpolation
-            j = locate(xRaw, xInterpolated(i), ax) 
-            if(j.EQ.1) then
-                call cubicInterpolation(xRaw(j), yRaw(j), xRaw(j+1), yRaw(j+1),  &
-                                            xRaw(j+2), yRaw(j+2), xRaw(j+3), yRaw(j+3), xInterpolated(i), yInterpolated(i))
-            elseif(j.EQ.ax) then
-                call cubicInterpolation(xRaw(j-3), yRaw(j-3), xRaw(j-2), yRaw(j-2),  &
-                                            xRaw(j-1), yRaw(j-1), xRaw(j), yRaw(j), xInterpolated(i), yInterpolated(i))
-            elseif(j.EQ.ax-1) then
-                call cubicInterpolation(xRaw(j-2), yRaw(j-2), xRaw(j-1), yRaw(j-1),  &
-                                            xRaw(j), yRaw(j), xRaw(j+1), yRaw(j+1), xInterpolated(i), yInterpolated(i))
+            iLoc = locate(xMesh, xInterpolated(i), meshX) 
+            if((iLoc.GE.2).AND.(iLoc.LE.meshX-2)) then
+                call cubicInterpolation(xMesh(iLoc-1:iLoc+2), yMesh(iLoc-1:iLoc+2), xInterpolated(i), uInterpolated(i))
+            elseif( (iLoc.LT.2) ) then
+                if(iLoc.LE.0) then
+                    write(*,*) "check boundary, iLoc=", iLoc
+                    stop
+                endif
+                call cubicInterpolation(xMesh(iLoc:iLoc+3), yMesh(iLoc:iLoc+3), xInterpolated(i), uInterpolated(i))
+            elseif( (iLoc.GT.meshX-2) ) then
+                if(iLoc.GE.meshX) then
+                    write(*,*) "check boundary, iLoc=", iLoc
+                    stop
+                endif
+                call cubicInterpolation(xMesh(iLoc-2:iLoc+1), yMesh(iLoc-2:iLoc+1), xInterpolated(i), uInterpolated(i))
             else
-                call cubicInterpolation(xRaw(j-1), yRaw(j-1), xRaw(j), yRaw(j),  &
-                                            xRaw(j+1), yRaw(j+1), xRaw(j+2), yRaw(j+2), xInterpolated(i), yInterpolated(i))
+                write(*,*) "check boundary, iLoc=", iLoc
+                stop
             endif
-            errorL1= errorL1+abs(yInterpolated(i)-dsin(xInterpolated(i)))
-            errorL2 = errorL2+(yInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
+            errorL1= errorL1+abs(uInterpolated(i)-dsin(xInterpolated(i)))
+            errorL2 = errorL2+(uInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
             errorNum = errorNum+1
 #endif
         endif
@@ -146,8 +149,8 @@
     
 #ifdef outputData
     open(unit=03,file="interpolated.dat",status="unknown")
-    do i=1,bx
-        write(03,*) xInterpolated(i), yInterpolated(i)
+    do i=1,particleX
+        write(03,*) xInterpolated(i), uInterpolated(i)
     enddo
     close(03)
 #endif
@@ -182,7 +185,7 @@
     do 
         if((jUpper-jLower).LE.1) exit
         jMedium = (jUpper+jLower)/2
-        if( ascnd.EQ.(x.GE.xx(jMedium)) ) then
+        if( ascnd.EQV.(x.GE.xx(jMedium)) ) then
             jLower = jMedium
         else
             jUpper = jMedium
@@ -199,44 +202,56 @@
     end function locate
     
     
-    subroutine linearInterpolation(point1X, point1Y, point2X, point2Y, point0X, point0Y)
+    subroutine linearInterpolation(point1X, point1U, point2X, point2U, point0X, point0U)
     implicit none
-    real(8) :: point1X, point1Y, point2X, point2Y
-    real(8) :: point0X, point0Y
+    real(8) :: point1X, point1U, point2X, point2U
+    real(8) :: point0X, point0U
     
     !--Straightforward implementation
-    point0Y = (point0X-point2X)/(point1X-point2X)*point1Y+(point0X-point1X)/(point2X-point1X)*point2Y
+    point0U = (point0X-point2X)/(point1X-point2X)*point1U+(point0X-point1X)/(point2X-point1X)*point2U
     
     return
     end subroutine linearInterpolation
     
     
-    subroutine quadraticInterpolation(point1X, point1Y, point2X, point2Y, point3X, point3Y, point0X, point0Y)
+    subroutine quadraticInterpolation(point1X, point1U, point2X, point2U, point3X, point3U, point0X, point0U)
     implicit none
-    real(8) :: point1X, point1Y, point2X, point2Y, point3X, point3Y
-    real(8) :: point0X, point0Y
+    real(8) :: point1X, point1U, point2X, point2U, point3X, point3U
+    real(8) :: point0X, point0U
     
-    point0Y = (point0X-point2X)*(point0X-point3X)/(point1X-point2X)/(point1X-point3X)*point1Y &
-                +(point0X-point1X)*(point0X-point3X)/(point2X-point1X)/(point2X-point3X)*point2Y &
-                +(point0X-point1X)*(point0X-point2X)/(point3X-point1X)/(point3X-point2X)*point3Y 
+    point0U = (point0X-point2X)*(point0X-point3X)/(point1X-point2X)/(point1X-point3X)*point1U &
+                +(point0X-point1X)*(point0X-point3X)/(point2X-point1X)/(point2X-point3X)*point2U &
+                +(point0X-point1X)*(point0X-point2X)/(point3X-point1X)/(point3X-point2X)*point3U 
                 
     return
     end subroutine quadraticInterpolation
     
 
-    subroutine cubicInterpolation(point1X, point1Y, point2X, point2Y, point3X, point3Y, point4X, point4Y, point0X, point0Y)
+    subroutine cubicInterpolation(pointX, pointY, point0X, point0U)
     implicit none
-    real(8) :: point1X, point1Y, point2X, point2Y, point3X, point3Y, point4X, point4Y
-    real(8) :: point0X, point0Y
+    real(8) :: pointX(1:4)
+    real(8) :: pointY(1:4)
+    real(8) :: point0X, point0U
+    real(8) :: point1X, point1U, point2X, point2U, point3X, point3U, point4X, point4U
     
-    point0Y = (point0X-point2X)*(point0X-point3X)*(point0X-point4X) &
-                    /(point1X-point2X)/(point1X-point3X)/(point1X-point4X)*point1Y &
+    point1X = pointX(1)
+    point2X = pointX(2)
+    point3X = pointX(3)
+    point4X = pointX(4)
+    
+    point1U = pointY(1)
+    point2U = pointY(2)
+    point3U = pointY(3)
+    point4U = pointY(4)
+    
+    point0U = (point0X-point2X)*(point0X-point3X)*(point0X-point4X) &
+                    /(point1X-point2X)/(point1X-point3X)/(point1X-point4X)*point1U &
                 +(point0X-point1X)*(point0X-point3X)*(point0X-point4X) &
-                    /(point2X-point1X)/(point2X-point3X)/(point2X-point4X)*point2Y &
+                    /(point2X-point1X)/(point2X-point3X)/(point2X-point4X)*point2U &
                 +(point0X-point1X)*(point0X-point2X)*(point0X-point4X) &
-                    /(point3X-point1X)/(point3X-point2X)/(point3X-point4X)*point3Y &
+                    /(point3X-point1X)/(point3X-point2X)/(point3X-point4X)*point3U &
                 +(point0X-point1X)*(point0X-point2X)*(point0X-point3X) &
-                    /(point4X-point1X)/(point4X-point2X)/(point4X-point3X)*point4Y 
+                    /(point4X-point1X)/(point4X-point2X)/(point4X-point3X)*point4U 
                 
     return
     end subroutine cubicInterpolation
