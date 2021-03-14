@@ -1,6 +1,6 @@
-!~#define linear_interpolation
+#define linear_interpolation
 !~#define quadratic_interpolation
-#define cubic_interpolation
+!~#define cubic_interpolation
 
 #define outputData
 
@@ -10,36 +10,40 @@
     integer, parameter :: nx=101
     real(8) :: xExact(nx), uExact(nx)
     
+#ifdef linear_interpolation
+    integer, parameter :: order=1
+#endif
+#ifdef quadratic_interpolation
+    integer, parameter :: order=2
+#endif
+#ifdef cubic_interpolation
+    integer, parameter :: order=3
+#endif
+
     integer, parameter :: meshX=10
-    real(8) :: xMesh(meshX), yMesh(meshX)
-    
+    real(8) :: xMesh(meshX), uMesh(meshX)
+
     integer, parameter :: particleX=100
     real(8) :: xInterpolated(particleX), uInterpolated(particleX)
+    
     integer :: iLoc
     integer :: i, j
     real(8) :: dx, dx2
-    real(8) :: point0X, point0U
-    real(8) :: point1X, point1U, point2X, point2U,  point3X, point3U,  point4X, point4U
     integer :: findLoc
     integer :: locate
-    
     real(8) :: errorL1, errorL2
     integer :: errorNum
-    
     character*24 ctime, string
     INTEGER*4  time
     real(kind=8) :: start, finish
     
-    
-    write(*,*) "Pi=",Pi
-    write(*,*) "nint(Pi+0.5)=", nint(Pi+0.5)
-    write(*,*) "int(Pi+0.5)=", int(Pi+0.5)
+    !~ write(*,*) "Pi=",Pi
+    !~ write(*,*) "nint(Pi+0.5)=", nint(Pi+0.5)
+    !~ write(*,*) "int(Pi+0.5)=", int(Pi+0.5)
     
     string = ctime( time() )
     write(*,*) 'Start: ', string
-    
     call CPU_TIME(start)
-    
     
 #ifdef linear_interpolation
     write(*,*) "I am linear interpolation!"
@@ -65,20 +69,22 @@
     close(01)
 #endif
     
+    write(*,*) "meshX:", meshX
     !--raw data points
     dx = 2.0d0*Pi/dble(meshX)
     do i=1,meshX
         xMesh(i) = dx/2.0d0+dble(i-1)*dx
-        yMesh(i) = dsin(xMesh(i))
+        uMesh(i) = dsin(xMesh(i))
     enddo
 #ifdef outputData
     open(unit=02,file="raw.dat",status="unknown")
     do i=1,meshX
-        write(02,*) xMesh(i), yMesh(i)
+        write(02,*) xMesh(i), uMesh(i)
     enddo
     close(02)
 #endif
     
+    write(*,*) "particleX:", particleX
     !--interpolated data points
     dx2 = 2.0d0*Pi/dble(particleX-1)
     errorL1 = 0.0d0
@@ -95,55 +101,57 @@
             uInterpolated(i) = 0.0d0
         ELSE
 #ifdef linear_interpolation               
-            j = locate(xMesh, xInterpolated(i), meshX) 
-            if(j.EQ.meshX) then
-                call linearInterpolation(xMesh(j-1), yMesh(j-1), xMesh(j), yMesh(j), xInterpolated(i), uInterpolated(i))
+            iLoc = locate(xMesh, xInterpolated(i), meshX) 
+            if( (iLoc.GE.1).AND.(iLoc.LE.meshX-1) ) then
+                call LagrangeInterpolation(xMesh(iLoc:iLoc+1), uMesh(iLoc:iLoc+1), xInterpolated(i), uInterpolated(i), order)
             else
-                call linearInterpolation(xMesh(j), yMesh(j), xMesh(j+1), yMesh(j+1), xInterpolated(i), uInterpolated(i))
+                write(*,*) "check boundary, iLoc=", iLoc
+                stop
             endif
-            errorL1= errorL1+abs(uInterpolated(i)-dsin(xInterpolated(i)))
-            errorL2 = errorL2+(uInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
-            errorNum = errorNum+1
 #endif
 
 #ifdef quadratic_interpolation
-            j = locate(xMesh, xInterpolated(i), meshX) 
-            if(j.EQ.1) then
-                call quadraticInterpolation(xMesh(j), yMesh(j), xMesh(j+1), yMesh(j+1), xMesh(j+2), yMesh(j+2), xInterpolated(i), uInterpolated(i))
-            elseif(j.EQ.meshX) then
-                call quadraticInterpolation(xMesh(j-2), yMesh(j-2), xMesh(j-1), yMesh(j-1), xMesh(j), yMesh(j), xInterpolated(i), uInterpolated(i))
-            else
-                call quadraticInterpolation(xMesh(j-1), yMesh(j-1), xMesh(j), yMesh(j), xMesh(j+1), yMesh(j+1), xInterpolated(i), uInterpolated(i))
-            endif
-            errorL1= errorL1+abs(uInterpolated(i)-dsin(xInterpolated(i)))
-            errorL2 = errorL2+(uInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
-            errorNum = errorNum+1
-#endif
-
-#ifdef cubic_interpolation
-            iLoc = locate(xMesh, xInterpolated(i), meshX) 
-            if((iLoc.GE.2).AND.(iLoc.LE.meshX-2)) then
-                call cubicInterpolation(xMesh(iLoc-1:iLoc+2), yMesh(iLoc-1:iLoc+2), xInterpolated(i), uInterpolated(i))
+            iLoc = locate(xMesh, xInterpolated(i), meshX)             
+            if( (iLoc.GE.2).AND.(iLoc.LE.meshX-1) ) then
+                call LagrangeInterpolation(xMesh(iLoc-1:iLoc+1), uMesh(iLoc-1:iLoc+1), xInterpolated(i), uInterpolated(i), order)
             elseif( (iLoc.LT.2) ) then
                 if(iLoc.LE.0) then
                     write(*,*) "check boundary, iLoc=", iLoc
                     stop
                 endif
-                call cubicInterpolation(xMesh(iLoc:iLoc+3), yMesh(iLoc:iLoc+3), xInterpolated(i), uInterpolated(i))
+                call LagrangeInterpolation(xMesh(iLoc:iLoc+2), uMesh(iLoc:iLoc+2), xInterpolated(i), uInterpolated(i), order)
+            else
+                write(*,*) "check boundary, iLoc=", iLoc
+                stop
+            endif
+#endif
+
+#ifdef cubic_interpolation
+            iLoc = locate(xMesh, xInterpolated(i), meshX) 
+            if( (iLoc.GE.2).AND.(iLoc.LE.meshX-2) ) then
+                call LagrangeInterpolation(xMesh(iLoc-1:iLoc+2), uMesh(iLoc-1:iLoc+2), xInterpolated(i), uInterpolated(i), order)
+            elseif( (iLoc.LT.2) ) then
+                if(iLoc.LE.0) then
+                    write(*,*) "check boundary, iLoc=", iLoc
+                    stop
+                endif
+                call LagrangeInterpolation(xMesh(iLoc:iLoc+3), uMesh(iLoc:iLoc+3), xInterpolated(i), uInterpolated(i), order)
             elseif( (iLoc.GT.meshX-2) ) then
                 if(iLoc.GE.meshX) then
                     write(*,*) "check boundary, iLoc=", iLoc
                     stop
                 endif
-                call cubicInterpolation(xMesh(iLoc-2:iLoc+1), yMesh(iLoc-2:iLoc+1), xInterpolated(i), uInterpolated(i))
+                call LagrangeInterpolation(xMesh(iLoc-2:iLoc+1), uMesh(iLoc-2:iLoc+1), xInterpolated(i), uInterpolated(i), order)
             else
                 write(*,*) "check boundary, iLoc=", iLoc
                 stop
             endif
+#endif
+
             errorL1= errorL1+abs(uInterpolated(i)-dsin(xInterpolated(i)))
             errorL2 = errorL2+(uInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
             errorNum = errorNum+1
-#endif
+            
         endif
     enddo
     
@@ -202,57 +210,23 @@
     end function locate
     
     
-    subroutine linearInterpolation(point1X, point1U, point2X, point2U, point0X, point0U)
+    subroutine LagrangeInterpolation(pointX, pointU, point0X, point0U, order)
     implicit none
-    real(8) :: point1X, point1U, point2X, point2U
+    integer :: order
+    real(8) :: pointX(1:order+1), pointU(1:order+1)
     real(8) :: point0X, point0U
-    
-    !--Straightforward implementation
-    point0U = (point0X-point2X)/(point1X-point2X)*point1U+(point0X-point1X)/(point2X-point1X)*point2U
-    
-    return
-    end subroutine linearInterpolation
-    
-    
-    subroutine quadraticInterpolation(point1X, point1U, point2X, point2U, point3X, point3U, point0X, point0U)
-    implicit none
-    real(8) :: point1X, point1U, point2X, point2U, point3X, point3U
-    real(8) :: point0X, point0U
-    
-    point0U = (point0X-point2X)*(point0X-point3X)/(point1X-point2X)/(point1X-point3X)*point1U &
-                +(point0X-point1X)*(point0X-point3X)/(point2X-point1X)/(point2X-point3X)*point2U &
-                +(point0X-point1X)*(point0X-point2X)/(point3X-point1X)/(point3X-point2X)*point3U 
-                
-    return
-    end subroutine quadraticInterpolation
-    
+    REAL(8) :: TEMP
+    integer :: j, k
 
-    subroutine cubicInterpolation(pointX, pointY, point0X, point0U)
-    implicit none
-    real(8) :: pointX(1:4)
-    real(8) :: pointY(1:4)
-    real(8) :: point0X, point0U
-    real(8) :: point1X, point1U, point2X, point2U, point3X, point3U, point4X, point4U
-    
-    point1X = pointX(1)
-    point2X = pointX(2)
-    point3X = pointX(3)
-    point4X = pointX(4)
-    
-    point1U = pointY(1)
-    point2U = pointY(2)
-    point3U = pointY(3)
-    point4U = pointY(4)
-    
-    point0U = (point0X-point2X)*(point0X-point3X)*(point0X-point4X) &
-                    /(point1X-point2X)/(point1X-point3X)/(point1X-point4X)*point1U &
-                +(point0X-point1X)*(point0X-point3X)*(point0X-point4X) &
-                    /(point2X-point1X)/(point2X-point3X)/(point2X-point4X)*point2U &
-                +(point0X-point1X)*(point0X-point2X)*(point0X-point4X) &
-                    /(point3X-point1X)/(point3X-point2X)/(point3X-point4X)*point3U &
-                +(point0X-point1X)*(point0X-point2X)*(point0X-point3X) &
-                    /(point4X-point1X)/(point4X-point2X)/(point4X-point3X)*point4U 
+    point0U = 0.0d0
+    do k=0,order
+        temp = 1.0d0
+        do j=0,order
+            if(j.NE.K) temp=temp*(point0X-pointX(j+1))/(pointX(k+1)-pointX(j+1))
+        enddo
+        point0U= point0U+temp*pointU(k+1)
+    enddO
                 
     return
-    end subroutine cubicInterpolation
+    end subroutine LagrangeInterpolation
 
