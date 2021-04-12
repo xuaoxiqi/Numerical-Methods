@@ -148,7 +148,7 @@
             endif
 #endif
 
-            errorL1= errorL1+abs(uInterpolated(i)-dsin(xInterpolated(i)))
+            errorL1= errorL1+dabs(uInterpolated(i)-dsin(xInterpolated(i)))
             errorL2 = errorL2+(uInterpolated(i)-dsin(xInterpolated(i)))**2.0d0
             errorNum = errorNum+1
             
@@ -219,12 +219,12 @@
     integer :: j, k
 
     point0U = 0.0d0
-    do k=0,order
+    do k=1,order+1
         temp = 1.0d0
-        do j=0,order
-            if(j.NE.K) temp=temp*(point0X-pointX(j+1))/(pointX(k+1)-pointX(j+1))
+        do j=1,order+1
+            if(j.NE.K) temp=temp*(point0X-pointX(j))/(pointX(k)-pointX(j))
         enddo
-        point0U= point0U+temp*pointU(k+1)
+        point0U= point0U+temp*pointU(k)
     enddO
                 
     return
