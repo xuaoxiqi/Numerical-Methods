@@ -1,5 +1,6 @@
 !~#define linear_interpolation
-#define cubic_interpolation
+!~#define cubic_interpolation
+#define fifth_interpolation
 
 #define outputData
 
@@ -14,6 +15,9 @@
 #endif
 #ifdef cubic_interpolation
     integer, parameter :: order=3
+#endif
+#ifdef fifth_interpolation
+    integer, parameter :: order=5
 #endif
 
     integer, parameter :: meshX=10*1, meshY=8*1
@@ -32,7 +36,7 @@
     character*24 ctime, string
     INTEGER*4  time
     real(kind=8) :: start, finish
-    real(8) :: tempU(1:4)
+    real(8) :: tempU(1:order+1)
     
     !~ write(*,*) "Pi=",Pi
     !~ write(*,*) "nint(Pi+0.5)=", nint(Pi+0.5)
@@ -237,6 +241,116 @@
                     stop
                 endif
 #endif
+
+#ifdef fifth_interpolation
+                iLoc = locate(xMesh, xInterpolated(i), meshX)
+                jLoc = locate(yMesh, yInterpolated(j), meshY) 
+                if( (iLoc.GE.3).AND.(jLoc.GE.3).AND.(iLoc.LE.meshX-3).AND.(jLoc.LE.meshY-3) ) then
+                    !--Bulk
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc-2, jLoc-2:jLoc+3), yInterpolated(j), tempU(1), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc-1, jLoc-2:jLoc+3), yInterpolated(j), tempU(2), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc,    jLoc-2:jLoc+3), yInterpolated(j), tempU(3), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc+1,jLoc-2:jLoc+3), yInterpolated(j), tempU(4), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc+2,jLoc-2:jLoc+3), yInterpolated(j), tempU(5), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc+3,jLoc-2:jLoc+3), yInterpolated(j), tempU(6), order)
+                    
+                    call LagrangeInterpolation(xMesh(iLoc-2:iLoc+3), tempU(1:6), xInterpolated(i), uInterpolated(i,j), order)
+
+                elseif( (iLoc.LT.3).AND.(jLoc.GE.3).AND.(jLoc.LE.meshY-3) ) then
+                    !----Left wall
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc,    jLoc-2:jLoc+3), yInterpolated(j), tempU(1), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc+1,jLoc-2:jLoc+3), yInterpolated(j), tempU(2), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc+2,jLoc-2:jLoc+3), yInterpolated(j), tempU(3), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc+3,jLoc-2:jLoc+3), yInterpolated(j), tempU(4), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc+4,jLoc-2:jLoc+3), yInterpolated(j), tempU(5), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc+5,jLoc-2:jLoc+3), yInterpolated(j), tempU(6), order)
+                    
+                    call LagrangeInterpolation(xMesh(iLoc:iLoc+5), tempU(1:6), xInterpolated(i), uInterpolated(i,j), order)
+                
+                elseif( (iLoc.GE.3).AND.(jLoc.LT.3).AND.(iLoc.LE.meshX-3) ) then
+                    !----Bottom wall
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc-2, jLoc:jLoc+5), yInterpolated(j), tempU(1), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc-1, jLoc:jLoc+5), yInterpolated(j), tempU(2), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc,    jLoc:jLoc+5), yInterpolated(j), tempU(3), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc+1,jLoc:jLoc+5), yInterpolated(j), tempU(4), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc+2,jLoc:jLoc+5), yInterpolated(j), tempU(5), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc+3,jLoc:jLoc+5), yInterpolated(j), tempU(6), order)
+                    
+                    call LagrangeInterpolation(xMesh(iLoc-2:iLoc+3), tempU(1:6), xInterpolated(i), uInterpolated(i,j), order)
+
+                elseif( (jLoc.GE.3).AND.(iLoc.GT.meshX-3).AND.(jLoc.LE.meshY-3) ) then
+                    !----Right wall
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc-4, jLoc-2:jLoc+3), yInterpolated(j), tempU(1), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc-3, jLoc-2:jLoc+3), yInterpolated(j), tempU(2), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc-2, jLoc-2:jLoc+3), yInterpolated(j), tempU(3), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc-1, jLoc-2:jLoc+3), yInterpolated(j), tempU(4), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc,    jLoc-2:jLoc+3), yInterpolated(j), tempU(5), order)
+                    call LagrangeInterpolation(yMesh(jLoc-2:jLoc+3), uMesh(iLoc+1,jLoc-2:jLoc+3), yInterpolated(j), tempU(6), order)
+                    
+                    call LagrangeInterpolation(xMesh(iLoc-4:iLoc+1), tempU(1:6), xInterpolated(i), uInterpolated(i,j), order)
+                
+                elseif( (iLoc.GE.3).AND.(iLoc.LE.meshX-3).AND.(jLoc.GT.meshY-3) ) then
+                    !----Top wall
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc-2, jLoc-4:jLoc+1), yInterpolated(j), tempU(1), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc-1, jLoc-4:jLoc+1), yInterpolated(j), tempU(2), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc,    jLoc-4:jLoc+1), yInterpolated(j), tempU(3), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc+1,jLoc-4:jLoc+1), yInterpolated(j), tempU(4), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc+2,jLoc-4:jLoc+1), yInterpolated(j), tempU(5), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc+3,jLoc-4:jLoc+1), yInterpolated(j), tempU(6), order)
+                    
+                    call LagrangeInterpolation(xMesh(iLoc-2:iLoc+3), tempU(1:6), xInterpolated(i), uInterpolated(i,j), order)
+                
+                elseif( (iLoc.LT.3).AND.(jLoc.LT.3) ) then
+                    !------Left&Bottom corner
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc,    jLoc:jLoc+5), yInterpolated(j), tempU(1), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc+1,jLoc:jLoc+5), yInterpolated(j), tempU(2), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc+2,jLoc:jLoc+5), yInterpolated(j), tempU(3), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc+3,jLoc:jLoc+5), yInterpolated(j), tempU(4), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc+4,jLoc:jLoc+5), yInterpolated(j), tempU(5), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc+5,jLoc:jLoc+5), yInterpolated(j), tempU(6), order)
+                    
+                    call LagrangeInterpolation(xMesh(iLoc:iLoc+5), tempU(1:6), xInterpolated(i), uInterpolated(i,j), order)
+                
+                elseif( (iLoc.LT.3).AND.(jLoc.GT.meshY-3) ) then
+                    !------Left&Top corner
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc,    jLoc-4:jLoc+1), yInterpolated(j), tempU(1), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc+1,jLoc-4:jLoc+1), yInterpolated(j), tempU(2), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc+2,jLoc-4:jLoc+1), yInterpolated(j), tempU(3), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc+3,jLoc-4:jLoc+1), yInterpolated(j), tempU(4), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc+4,jLoc-4:jLoc+1), yInterpolated(j), tempU(5), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc+5,jLoc-4:jLoc+1), yInterpolated(j), tempU(6), order)
+                    
+                    call LagrangeInterpolation(xMesh(iLoc:iLoc+5), tempU(1:6), xInterpolated(i), uInterpolated(i,j), order)
+                
+                elseif( (jLoc.LT.3).AND.(iLoc.GT.meshX-3) ) then
+                    !------Right&Bottom corner
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc-4, jLoc:jLoc+5), yInterpolated(j), tempU(1), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc-3, jLoc:jLoc+5), yInterpolated(j), tempU(2), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc-2, jLoc:jLoc+5), yInterpolated(j), tempU(3), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc-1, jLoc:jLoc+5), yInterpolated(j), tempU(4), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc,    jLoc:jLoc+5), yInterpolated(j), tempU(5), order)
+                    call LagrangeInterpolation(yMesh(jLoc:jLoc+5), uMesh(iLoc+1,jLoc:jLoc+5), yInterpolated(j), tempU(6), order)
+                    
+                    call LagrangeInterpolation(xMesh(iLoc-4:iLoc+1), tempU(1:6), xInterpolated(i), uInterpolated(i,j), order)
+                
+                elseif( (iLoc.GT.meshX-3).AND.(jLoc.GT.meshY-3) ) then
+                    !------Right&Top corner
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc-4, jLoc-4:jLoc+1), yInterpolated(j), tempU(1), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc-3, jLoc-4:jLoc+1), yInterpolated(j), tempU(2), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc-2, jLoc-4:jLoc+1), yInterpolated(j), tempU(3), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc-1, jLoc-4:jLoc+1), yInterpolated(j), tempU(4), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc,    jLoc-4:jLoc+1), yInterpolated(j), tempU(5), order)
+                    call LagrangeInterpolation(yMesh(jLoc-4:jLoc+1), uMesh(iLoc+1,jLoc-4:jLoc+1), yInterpolated(j), tempU(6), order)
+                    
+                    call LagrangeInterpolation(xMesh(iLoc-4:iLoc+1), tempU(1:6), xInterpolated(i), uInterpolated(i,j), order)
+                
+                else
+                    write(*,*) "Check boundary..."
+                    write(*,*) "iLoc=,", iLoc, ", jLoc=", jLoc
+                    stop
+                endif
+#endif
+
                 errorL1= errorL1+dabs(uInterpolated(i,j)-dsin(xInterpolated(i))*dcos(yInterpolated(j)))
                 errorL2 = errorL2+(uInterpolated(i,j)-dsin(xInterpolated(i))*dcos(yInterpolated(j)))**2.0d0
                 errorNum = errorNum+1
