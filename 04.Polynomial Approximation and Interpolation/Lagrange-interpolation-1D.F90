@@ -170,7 +170,7 @@
                     write(*,*) "check boundary, iLoc=", iLoc
                     stop
                 endif
-                call LagrangeInterpolation(xMesh(iLoc-5:iLoc), uMesh(iLoc-5:iLoc), xInterpolated(i), uInterpolated(i), order)
+                call LagrangeInterpolation(xMesh(iLoc-4:iLoc+1), uMesh(iLoc-4:iLoc+1), xInterpolated(i), uInterpolated(i), order)
             else
                 write(*,*) "check boundary, iLoc=", iLoc
                 stop
