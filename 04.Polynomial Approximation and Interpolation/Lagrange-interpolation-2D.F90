@@ -16,10 +16,10 @@
     integer, parameter :: order=3
 #endif
 
-    integer, parameter :: meshX=50*16, meshY=40*16
+    integer, parameter :: meshX=10*1, meshY=8*1
     real(8) :: xMesh(meshX), yMesh(meshY), uMesh(meshX,meshY)
     
-    integer, parameter :: particleX=200, particleY=160
+    integer, parameter :: particleX=100, particleY=80
     real(8) :: xInterpolated(particleX), yInterpolated(particleY), uInterpolated(particleX,particleY)
     
     integer :: i, j
@@ -237,7 +237,7 @@
                     stop
                 endif
 #endif
-                errorL1= errorL1+abs(uInterpolated(i,j)-dsin(xInterpolated(i))*dcos(yInterpolated(j)))
+                errorL1= errorL1+dabs(uInterpolated(i,j)-dsin(xInterpolated(i))*dcos(yInterpolated(j)))
                 errorL2 = errorL2+(uInterpolated(i,j)-dsin(xInterpolated(i))*dcos(yInterpolated(j)))**2.0d0
                 errorNum = errorNum+1
                 
@@ -314,12 +314,12 @@
     integer :: j, k
 
     point0U = 0.0d0
-    do k=0,order
+    do k=1,order+1
         temp = 1.0d0
-        do j=0,order
-            if(j.NE.K) temp=temp*(point0X-pointX(j+1))/(pointX(k+1)-pointX(j+1))
+        do j=1,order+1
+            if(j.NE.K) temp=temp*(point0X-pointX(j))/(pointX(k)-pointX(j))
         enddo
-        point0U= point0U+temp*pointU(k+1)
+        point0U= point0U+temp*pointU(k)
     enddO
                 
     return
