@@ -1,6 +1,7 @@
-#define linear_interpolation
+!~#define linear_interpolation
 !~#define quadratic_interpolation
 !~#define cubic_interpolation
+#define fifth_interpolation
 
 #define outputData
 
@@ -18,6 +19,9 @@
 #endif
 #ifdef cubic_interpolation
     integer, parameter :: order=3
+#endif
+#ifdef fifth_interpolation
+    integer, parameter :: order=5
 #endif
 
     integer, parameter :: meshX=10
@@ -53,6 +57,9 @@
 #endif
 #ifdef cubic_interpolation
     write(*,*) "I am cubic interpolation!"
+#endif
+#ifdef fifth_interpolation
+    write(*,*) "I am fifth interpolation!"
 #endif
     write(*,*) "    "
     
@@ -142,6 +149,28 @@
                     stop
                 endif
                 call LagrangeInterpolation(xMesh(iLoc-2:iLoc+1), uMesh(iLoc-2:iLoc+1), xInterpolated(i), uInterpolated(i), order)
+            else
+                write(*,*) "check boundary, iLoc=", iLoc
+                stop
+            endif
+#endif
+
+#ifdef fifth_interpolation
+            iLoc = locate(xMesh, xInterpolated(i), meshX) 
+            if( (iLoc.GE.3).AND.(iLoc.LE.meshX-3) ) then
+                call LagrangeInterpolation(xMesh(iLoc-2:iLoc+3), uMesh(iLoc-2:iLoc+3), xInterpolated(i), uInterpolated(i), order)
+            elseif( (iLoc.LT.3) ) then
+                if(iLoc.LE.0) then
+                    write(*,*) "check boundary, iLoc=", iLoc
+                    stop
+                endif
+                call LagrangeInterpolation(xMesh(iLoc:iLoc+5), uMesh(iLoc:iLoc+5), xInterpolated(i), uInterpolated(i), order)
+            elseif( (iLoc.GT.meshX-3) ) then
+                if(iLoc.GE.meshX) then
+                    write(*,*) "check boundary, iLoc=", iLoc
+                    stop
+                endif
+                call LagrangeInterpolation(xMesh(iLoc-5:iLoc), uMesh(iLoc-5:iLoc), xInterpolated(i), uInterpolated(i), order)
             else
                 write(*,*) "check boundary, iLoc=", iLoc
                 stop
