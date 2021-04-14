@@ -1,8 +1,12 @@
 #!MC 1410
 $!VarSet |LFDSFN1| = '"analytical.dat"'
 $!VarSet |LFDSVL1| = '"V1" "V2"'
-$!VarSet |LFDSFN2| = '"numerical.dat"'
+$!VarSet |LFDSFN2| = '"numerical-1st.dat"'
 $!VarSet |LFDSVL2| = '"V1" "V2"'
+$!VarSet |LFDSFN3| = '"numerical-2nd.dat"'
+$!VarSet |LFDSVL3| = '"V1" "V2"'
+$!VarSet |LFDSFN4| = '"numerical-4th.dat"'
+$!VarSet |LFDSVL4| = '"V1" "V2"'
 $!SetStyleBase Factory
 $!GlobalPaper 
   PaperSizeInfo
@@ -59,6 +63,28 @@ $!ReadDataSet  '|LFDSFN2|'
   VarNameList = '|LFDSVL2|'
 $!RemoveVar |LFDSVL2|
 $!RemoveVar |LFDSFN2|
+$!ReadDataSet  '|LFDSFN3|'
+  InitialPlotType = XYLine
+  IncludeText = No
+  IncludeGeom = No
+  ReadDataOption = Append
+  ResetStyle = No
+  AssignStrandIDs = Yes
+  VarLoadMode = ByName
+  VarNameList = '|LFDSVL3|'
+$!RemoveVar |LFDSVL3|
+$!RemoveVar |LFDSFN3|
+$!ReadDataSet  '|LFDSFN4|'
+  InitialPlotType = XYLine
+  IncludeText = No
+  IncludeGeom = No
+  ReadDataOption = Append
+  ResetStyle = No
+  AssignStrandIDs = Yes
+  VarLoadMode = ByName
+  VarNameList = '|LFDSVL4|'
+$!RemoveVar |LFDSVL4|
+$!RemoveVar |LFDSFN4|
 $!FrameLayout 
   ShowBorder = No
   ShowHeader = No
@@ -78,7 +104,7 @@ $!FrameName  = 'Frame 001'
 $!GlobalTime 
   SolutionTime = 0
 $!DeleteLineMaps 
-$!ActiveLineMaps  =  [1-2]
+$!ActiveLineMaps  =  [1-4]
 $!GlobalLinePlot 
   DataLabels
     {
@@ -92,7 +118,7 @@ $!GlobalLinePlot
       FontFamily = 'Times New Roman'
       IsBold = No
       SizeUnits = Point
-      Height = 24
+      Height = 22
       }
     Box
       {
@@ -101,8 +127,8 @@ $!GlobalLinePlot
       }
     XYPos
       {
-      X = 94.926
-      Y = 95.28
+      X = 57.284
+      Y = 40.274
       }
     }
 $!LineMap  [1]
@@ -120,6 +146,10 @@ $!LineMap  [1]
     }
   Symbols
     {
+    SymbolShape
+      {
+      GeomShape = Circle
+      }
     Color = Red
     FillMode = UseSpecificColor
     FillColor = White
@@ -135,7 +165,7 @@ $!LineMap  [1]
     Color = Red
     }
 $!LineMap  [2]
-  Name = 'Numerical'
+  Name = 'Numerical-1st'
   Assign
     {
     Zone = 2
@@ -144,13 +174,13 @@ $!LineMap  [2]
     }
   Lines
     {
-    Color = Blue
+    Color = Purple
     LinePattern = DashDot
     LineThickness = 0.4
     }
   Symbols
     {
-    Color = Blue
+    Color = Purple
     FillMode = UseSpecificColor
     FillColor = White
     LineThickness = 0.4
@@ -163,6 +193,64 @@ $!LineMap  [2]
   ErrorBars
     {
     Color = Green
+    }
+$!LineMap  [3]
+  Name = 'Numerical-2nd'
+  Assign
+    {
+    Zone = 3
+    XAxisVar = 1
+    YAxisVar = 2
+    }
+  Lines
+    {
+    Color = Blue
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Blue
+    FillMode = UseSpecificColor
+    FillColor = White
+    LineThickness = 0.4
+    }
+  BarCharts
+    {
+    Color = Blue
+    FillColor = Blue
+    }
+  ErrorBars
+    {
+    Color = Blue
+    }
+$!LineMap  [4]
+  Name = 'Numerical-4th'
+  Assign
+    {
+    Zone = 4
+    XAxisVar = 1
+    YAxisVar = 2
+    }
+  Lines
+    {
+    Color = Black
+    LineThickness = 0.4
+    }
+  Symbols
+    {
+    Color = Black
+    FillMode = UseSpecificColor
+    FillColor = White
+    LineThickness = 0.4
+    }
+  BarCharts
+    {
+    Color = Custom1
+    FillColor = Custom1
+    }
+  ErrorBars
+    {
+    Color = Custom1
     }
 $!XYLineAxis 
   DepXToYRatio = 1
@@ -211,9 +299,9 @@ $!XYLineAxis
 $!XYLineAxis 
   YDetail 1
     {
-    RangeMin = -0.16052007675170898
-    RangeMax = 0.15918690417259931
-    GRSpacing = 0.05
+    RangeMin = -1.1000000000000001
+    RangeMax = 1.3999999999999999
+    GRSpacing = 1
     TickLabel
       {
       TextShape
