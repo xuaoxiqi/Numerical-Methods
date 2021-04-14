@@ -6,7 +6,7 @@
 #define rhsFt
 !~#define rhsFty
 
-!~#define calPosition
+#define calPosition
 
     program main
     implicit none
